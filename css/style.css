@@ -24,3 +24,9 @@ body { font-family: 'Segoe UI', sans-serif; background: #0a0a0f; color: #e0e0e0;
 .result-table td.label { color: #888; width: 40%; }
 .kerry-status { margin-top: 16px; padding-top: 16px; border-top: 2px solid #00d4ff; }
 #stats { text-align: center; color: #666; margin-top: 20px; font-size: 14px; }
+.status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-left: 10px; }
+.status-accepted { background: #00c853; color: #000; }
+.status-created { background: #ffc107; color: #000; }
+.status-other { background: #2196f3; color: #fff; }
+.status-row { background: rgba(0,212,255,0.1); }
+.status-row td { color: #00d4ff; font-weight: 500; }
