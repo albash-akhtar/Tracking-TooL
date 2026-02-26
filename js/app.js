@@ -1,15 +1,14 @@
 const DATA_SOURCES = [
     { name: 'ECL QC Center', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSCiZ1MdPMyVAzBqmBmp3Ch8sfefOp_kfPk2RSfMv3bxRD_qccuwaoM7WTVsieKJbA3y3DF41tUxb3T/pub?gid=0&single=true&output=csv' },
     { name: 'ECL Zone', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSCiZ1MdPMyVAzBqmBmp3Ch8sfefOp_kfPk2RSfMv3bxRD_qccuwaoM7WTVsieKJbA3y3DF41tUxb3T/pub?gid=928309568&single=true&output=csv' },
-    { name: 'GE QC Center', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjCPd8bUpx59Sit8gMMXjVKhIFA_f-W9Q4mkBSWuIOTg4RGahcVXSD4xZiYBAcAH6eO40aEQ9IEEXj/pub?gid=710036753&single=true&output=csv' },
-    { name: 'GE Zone', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjCPd8bUpx59Sit8gMMXjVKhIFA_f-W9Q4mkBSWuIOTg4RGahcVXSD4xZiYBAcAH6eO40aEQ9IEEXj/pub?gid=10726393&single=true&output=csv' },
-    { name: 'APX', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDEzAMUwnFZ7aoThGoMERtxxsIl2kfEaSpa9ksXlx6sqbdMncts6Go2d5mKKabepbNXDSoeaUlk-mP/pub?gid=0&single=true&output=csv' },
-    { name: 'Kerry', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZyLyZpVJz9sV5eT4Srwo_KZGnYggpRZkm2ILLYPQKSpTKkWfP9G5759h247O4QEflKCzlQauYsLKl/pub?gid=0&single=true&output=csv' },
-    { name: 'Sea Shipped QC', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPWppcYunq-MuluZ2pOzptlKP-6oaHMQBS26f9IfpnSyJhll4O_twlxp8EnA-jMbk4meLpMqWajfAX/pub?gid=1044610764&single=true&output=csv' },
-    { name: 'Sea Shipped Zone', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPWppcYunq-MuluZ2pOzptlKP-6oaHMQBS26f9IfpnSyJhll4O_twlxp8EnA-jMbk4meLpMqWajfAX/pub?gid=0&single=true&output=csv' }
+    { name: 'GE QC Center', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjCPd8bUpx59Sit8gMMXjVKhIFA_f-W9Q4mkBSWulOTg4RGahcVXSD4xZiYBAcAH6eO40aEQ9IEEXj/pub?gid=710036753&single=true&output=csv' },
+    { name: 'GE Zone', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjCPd8bUpx59Sit8gMMXjVKhIFA_f-W9Q4mkBSWulOTg4RGahcVXSD4xZiYBAcAH6eO40aEQ9IEEXj/pub?gid=10726393&single=true&output=csv' },
+    { name: 'Kerry', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZyLyZpVJz9sV5eT4Srwo_KZGnYggpRZkm2ILLYPQKSpTKkWfP9G5759h247O4QEflKCzlQauYsLKI/pub?gid=0&single=true&output=csv' },
+    { name: 'Sea Shipped QC', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPWppcYunq-MuluZ2pOzptlKP-6oaHMQBS26f9lfpnSyJhIl4O_twlxp8EnA-jMbk4meLpMqWajfAX/pub?gid=1044610764&single=true&output=csv' },
+    { name: 'Sea Shipped Zone', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPWppcYunq-MuluZ2pOzptlKP-6oaHMQBS26f9lfpnSyJhIl4O_twlxp8EnA-jMbk4meLpMqWajfAX/pub?gid=0&single=true&output=csv' }
 ];
 
-const KERRY_STATUS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZyLyZpVJz9sV5eT4Srwo_KZGnYggpRZkm2ILLYPQKSpTKkWfP9G5759h247O4QEflKCzlQauYsLKl/pub?gid=2121564686&single=true&output=csv';
+const KERRY_STATUS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZyLyZpVJz9sV5eT4Srwo_KZGnYggpRZkm2ILLYPQKSpTKkWfP9G5759h247O4QEflKCzlQauYsLKI/pub?gid=2121564686&single=true&output=csv';
 
 let allData = [];
 let kerryStatusData = { headers: [], rows: [] };
