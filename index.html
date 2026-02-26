@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TID Search Tool</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>📊 Data Sources</h2>
+            </div>
+            <div class="sidebar-content">
+                <div class="total-records">
+                    <span class="label">Total Records:</span>
+                    <span class="value" id="totalRecords">Loading...</span>
+                </div>
+                <hr>
+                <div class="source-list" id="sourceList"></div>
+                <hr>
+                <button class="refresh-btn" onclick="refreshData()">🔄 Refresh Data</button>
+                <p class="last-updated" id="lastUpdated">Last updated: --:--:--</p>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <h1 class="main-header">🔍 TID Search Tool</h1>
+                <p class="sub-header">Search tracking IDs across all logistics partners</p>
+            </header>
+
+            <section class="search-section">
+                <h3>🔎 Search</h3>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Enter Order Number, Fleek ID, or TID..." onkeypress="handleKeyPress(event)">
+                    <button class="search-btn" onclick="performSearch()">Search</button>
+                </div>
+            </section>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Loading data from all sources...</p>
+            </div>
+
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <div class="results-summary" id="resultsSummary"></div>
+                <div class="stats-grid" id="statsGrid"></div>
+                <hr>
+                <h3>📋 Results</h3>
+                <div class="results-list" id="resultsList"></div>
+                <button class="download-btn" onclick="downloadResults()">📥 Download Results (CSV)</button>
+            </section>
+
+            <div class="no-results" id="noResults" style="display: none;">❌ No results found. Try a different search term.</div>
+
+            <section class="preview-section" id="previewSection">
+                <hr>
+                <h3>📊 Sample Data Preview</h3>
+                <div class="tabs">
+                    <div class="tab-buttons" id="tabButtons"></div>
+                    <div class="tab-content" id="tabContent"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="js/app.js"></script>
+</body>
+</html>
