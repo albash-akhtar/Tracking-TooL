@@ -1,5 +1,3 @@
-const CORS_PROXY = "https://corsproxy.io/?";
-
 const DATA_SOURCES = {
     "ECL QC Center": {
         url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSCiZ1MdPMyVAzBqmBmp3Ch8sfefOp_kfPk2RSfMv3bxRD_qccuwaoM7WTVsieKJbA3y3DF41tUxb3T/pub?gid=0&single=true&output=csv",
@@ -52,23 +50,68 @@ let kerryStatusData = [];
 let currentResults = [];
 let stats = {};
 
-async function loadCSV(url) {
-    return new Promise((resolve, reject) => {
-        const proxyUrl = CORS_PROXY + encodeURIComponent(url);
-        Papa.parse(proxyUrl, {
-            download: true,
-            header: true,
-            skipEmptyLines: true,
-            complete: (results) => {
-                console.log("Loaded:", url.substring(0, 50), "Rows:", results.data.length);
-                resolve(results.data);
-            },
-            error: (error) => {
-                console.error("Error loading:", url, error);
-                reject(error);
+async function fetchCSV(url) {
+    const proxyUrls = [
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+        `https://corsproxy.io/?${encodeURIComponent(url)}`,
+        url
+    ];
+    
+    for (const proxyUrl of proxyUrls) {
+        try {
+            const response = await fetch(proxyUrl);
+            if (response.ok) {
+                const text = await response.text();
+                if (text && text.length > 0) {
+                    return text;
+                }
             }
+        } catch (e) {
+            console.log(`Proxy failed: ${proxyUrl.substring(0, 50)}...`);
+        }
+    }
+    throw new Error("All proxies failed");
+}
+
+function parseCSV(csvText) {
+    const lines = csvText.split('\n');
+    if (lines.length < 2) return [];
+    
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+    const data = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        const values = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let j = 0; j < line.length; j++) {
+            const char = line[j];
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                values.push(current.trim());
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        values.push(current.trim());
+        
+        const row = {};
+        headers.forEach((header, index) => {
+            row[header] = values[index] || '';
         });
-    });
+        
+        if (Object.values(row).some(v => v)) {
+            data.push(row);
+        }
+    }
+    
+    return data;
 }
 
 async function loadAllData() {
@@ -76,12 +119,13 @@ async function loadAllData() {
     stats = {};
     allData = {};
     
-    console.log("Starting to load all data sources...");
+    console.log("🚀 Starting to load data...");
     
     for (const [name, config] of Object.entries(DATA_SOURCES)) {
         try {
-            console.log(`Loading ${name}...`);
-            const data = await loadCSV(config.url);
+            console.log(`📥 Loading ${name}...`);
+            const csvText = await fetchCSV(config.url);
+            const data = parseCSV(csvText);
             
             let searchCol;
             if (typeof config.orderCol === 'number') {
@@ -94,27 +138,25 @@ async function loadAllData() {
                 if (match) searchCol = match;
             }
             
-            const cleanData = data.filter(row => Object.values(row).some(v => v && v.toString().trim()));
-            
             allData[name] = {
-                data: cleanData,
+                data: data,
                 config: { ...config, searchCol }
             };
-            stats[name] = cleanData.length;
-            console.log(`✅ ${name}: ${cleanData.length} rows loaded`);
+            stats[name] = data.length;
+            console.log(`✅ ${name}: ${data.length} rows`);
         } catch (error) {
-            console.error(`❌ Error loading ${name}:`, error);
+            console.error(`❌ ${name} failed:`, error.message);
             stats[name] = 0;
         }
     }
     
-    // Load Kerry status
     try {
-        console.log("Loading Kerry Status...");
-        kerryStatusData = await loadCSV(KERRY_STATUS_URL);
-        console.log(`✅ Kerry Status: ${kerryStatusData.length} rows loaded`);
+        console.log("📥 Loading Kerry Status...");
+        const csvText = await fetchCSV(KERRY_STATUS_URL);
+        kerryStatusData = parseCSV(csvText);
+        console.log(`✅ Kerry Status: ${kerryStatusData.length} rows`);
     } catch (error) {
-        console.error("❌ Error loading Kerry Status:", error);
+        console.error("❌ Kerry Status failed:", error.message);
         kerryStatusData = [];
     }
     
@@ -123,7 +165,11 @@ async function loadAllData() {
     showPreview();
     
     const total = Object.values(stats).reduce((a, b) => a + b, 0);
-    console.log(`🎉 Total records loaded: ${total}`);
+    console.log(`🎉 Total: ${total} records loaded`);
+    
+    if (total === 0) {
+        alert("⚠️ Data load nahi hua. Google Sheets 'Publish to Web' check karo.");
+    }
 }
 
 function performSearch() {
@@ -133,17 +179,14 @@ function performSearch() {
         return;
     }
     
-    console.log(`Searching for: ${query}`);
     currentResults = [];
     
     Object.entries(allData).forEach(([sourceName, sourceData]) => {
         const { data, config } = sourceData;
-        const searchCol = config.searchCol;
         
         data.forEach(row => {
-            // Search in all columns
             let found = false;
-            for (const [key, value] of Object.entries(row)) {
+            for (const value of Object.values(row)) {
                 if (String(value || '').toUpperCase().includes(query)) {
                     found = true;
                     break;
@@ -156,14 +199,13 @@ function performSearch() {
                     _source: sourceName,
                     _partner: config.partner,
                     _cssClass: config.cssClass,
-                    _searchCol: searchCol,
+                    _searchCol: config.searchCol,
                     _dateCol: config.dateCol
                 });
             }
         });
     });
     
-    console.log(`Found ${currentResults.length} results`);
     displayResults();
 }
 
@@ -217,7 +259,7 @@ function displayResults() {
     `;
     
     const resultsList = document.getElementById('resultsList');
-    resultsList.innerHTML = currentResults.map((row, index) => {
+    resultsList.innerHTML = currentResults.slice(0, 50).map((row, index) => {
         const orderId = row[row._searchCol] || 'N/A';
         const handoverDate = row[row._dateCol] || 'N/A';
         const kerryStatus = row._partner === 'Kerry' ? getKerryStatus(orderId) : null;
@@ -236,6 +278,10 @@ function displayResults() {
             </div>
         `;
     }).join('');
+    
+    if (currentResults.length > 50) {
+        resultsList.innerHTML += `<p style="text-align:center;color:#64748b;">Showing 50 of ${currentResults.length} results</p>`;
+    }
 }
 
 function toggleDetails(index) {
@@ -287,8 +333,8 @@ function showTab(sourceName, btn) {
     const headers = Object.keys(data[0]).filter(h => !h.startsWith('_'));
     document.getElementById('tabContent').innerHTML = `
         <table class="data-table">
-            <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
-            <tbody>${data.map(row => `<tr>${headers.map(h => `<td>${row[h] || ''}</td>`).join('')}</tr>`).join('')}</tbody>
+            <thead><tr>${headers.slice(0, 8).map(h => `<th>${h}</th>`).join('')}</tr></thead>
+            <tbody>${data.map(row => `<tr>${headers.slice(0, 8).map(h => `<td>${row[h] || ''}</td>`).join('')}</tr>`).join('')}</tbody>
         </table>
     `;
 }
@@ -299,15 +345,19 @@ function refreshData() {
 
 function downloadResults() {
     if (!currentResults.length) return;
-    const csvData = currentResults.map(row => {
-        const cleanRow = {};
-        Object.entries(row).forEach(([key, value]) => {
-            if (!key.startsWith('_')) cleanRow[key] = value;
+    const headers = Object.keys(currentResults[0]).filter(k => !k.startsWith('_'));
+    headers.push('Source');
+    
+    let csv = headers.join(',') + '\n';
+    currentResults.forEach(row => {
+        const values = headers.map(h => {
+            if (h === 'Source') return row._source;
+            const val = String(row[h] || '').replace(/"/g, '""');
+            return val.includes(',') ? `"${val}"` : val;
         });
-        cleanRow['Source'] = row._source;
-        return cleanRow;
+        csv += values.join(',') + '\n';
     });
-    const csv = Papa.unparse(csvData);
+    
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -318,6 +368,6 @@ function downloadResults() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("🚀 TID Search Tool Starting...");
+    console.log("🚀 TID Search Tool v2.0");
     loadAllData();
 });
