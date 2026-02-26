@@ -9,7 +9,10 @@ const DATA_SOURCES = [
     { name: 'Sea Shipped Zone', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPWppcYunq-MuluZ2pOzptlKP-6oaHMQBS26f9IfpnSyJhll4O_twlxp8EnA-jMbk4meLpMqWajfAX/pub?gid=0&single=true&output=csv' }
 ];
 
+const KERRY_STATUS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZyLyZpVJz9sV5eT4Srwo_KZGnYggpRZkm2ILLYPQKSpTKkWfP9G5759h247O4QEflKCzlQauYsLKl/pub?gid=2121564686&single=true&output=csv';
+
 let allData = [];
+let kerryStatusData = { headers: [], rows: [] };
 let loadedSources = 0;
 
 function parseCSV(text) {
@@ -55,6 +58,34 @@ async function fetchData(url) {
     throw new Error('All proxies failed');
 }
 
+async function loadKerryStatus() {
+    try {
+        const text = await fetchData(KERRY_STATUS_URL);
+        kerryStatusData = parseCSV(text);
+        console.log(`Loaded ${kerryStatusData.rows.length} Kerry status records`);
+    } catch (e) {
+        console.error('Failed to load Kerry status:', e);
+    }
+}
+
+function getLatestStatus(orderId) {
+    if (!kerryStatusData.rows || kerryStatusData.rows.length === 0) return null;
+    
+    const orderIdClean = orderId.toString().toLowerCase().trim();
+    
+    for (const row of kerryStatusData.rows) {
+        const rowOrderId = (row[0] || '').toString().toLowerCase().trim();
+        if (rowOrderId && (rowOrderId.includes(orderIdClean) || orderIdClean.includes(rowOrderId))) {
+            return {
+                orderId: row[0] || '',
+                status: row[1] || '',
+                type: row[2] || ''
+            };
+        }
+    }
+    return null;
+}
+
 async function loadDataSource(source) {
     try {
         const text = await fetchData(source.url);
@@ -97,7 +128,28 @@ function displayResults(results) {
     }
     let html = `<div class="results-count">${results.length} result(s) found</div>`;
     results.forEach(item => {
-        html += `<div class="result-card"><div class="result-header">${item.source}</div><div class="result-body"><table class="result-table">`;
+        // Get order ID from first column
+        const orderId = item.row[0] || '';
+        
+        // Check for latest status
+        const latestStatus = getLatestStatus(orderId);
+        
+        html += `<div class="result-card"><div class="result-header">${item.source}`;
+        
+        // Add status badge if available
+        if (latestStatus) {
+            const statusClass = latestStatus.status.toLowerCase() === 'accepted' ? 'status-accepted' : 
+                               latestStatus.status.toLowerCase() === 'created' ? 'status-created' : 'status-other';
+            html += ` <span class="status-badge ${statusClass}">${latestStatus.status}</span>`;
+        }
+        
+        html += `</div><div class="result-body"><table class="result-table">`;
+        
+        // Add Latest Status row at top if available
+        if (latestStatus) {
+            html += `<tr class="status-row"><td class="label">📦 Latest Status</td><td><strong>${latestStatus.status}</strong> (${latestStatus.type})</td></tr>`;
+        }
+        
         item.headers.forEach((header, i) => { 
             if (item.row[i]) html += `<tr><td class="label">${header}</td><td>${item.row[i]}</td></tr>`; 
         });
@@ -110,6 +162,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.getElementById('searchBtn');
     
+    // Load Kerry status first, then other sources
+    loadKerryStatus();
     DATA_SOURCES.forEach(source => loadDataSource(source));
     
     searchBtn.addEventListener('click', () => displayResults(search(searchInput.value)));
