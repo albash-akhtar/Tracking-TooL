@@ -1,3 +1,5 @@
+const CORS_PROXY = "https://corsproxy.io/?";
+
 const DATA_SOURCES = {
     "ECL QC Center": {
         url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSCiZ1MdPMyVAzBqmBmp3Ch8sfefOp_kfPk2RSfMv3bxRD_qccuwaoM7WTVsieKJbA3y3DF41tUxb3T/pub?gid=0&single=true&output=csv",
@@ -52,11 +54,19 @@ let stats = {};
 
 async function loadCSV(url) {
     return new Promise((resolve, reject) => {
-        Papa.parse(url, {
+        const proxyUrl = CORS_PROXY + encodeURIComponent(url);
+        Papa.parse(proxyUrl, {
             download: true,
             header: true,
-            complete: (results) => resolve(results.data),
-            error: (error) => reject(error)
+            skipEmptyLines: true,
+            complete: (results) => {
+                console.log("Loaded:", url.substring(0, 50), "Rows:", results.data.length);
+                resolve(results.data);
+            },
+            error: (error) => {
+                console.error("Error loading:", url, error);
+                reject(error);
+            }
         });
     });
 }
@@ -66,9 +76,13 @@ async function loadAllData() {
     stats = {};
     allData = {};
     
-    const promises = Object.entries(DATA_SOURCES).map(async ([name, config]) => {
+    console.log("Starting to load all data sources...");
+    
+    for (const [name, config] of Object.entries(DATA_SOURCES)) {
         try {
+            console.log(`Loading ${name}...`);
             const data = await loadCSV(config.url);
+            
             let searchCol;
             if (typeof config.orderCol === 'number') {
                 const headers = Object.keys(data[0] || {});
@@ -79,27 +93,37 @@ async function loadAllData() {
                 const match = headers.find(h => h.toLowerCase() === searchCol.toLowerCase());
                 if (match) searchCol = match;
             }
+            
+            const cleanData = data.filter(row => Object.values(row).some(v => v && v.toString().trim()));
+            
             allData[name] = {
-                data: data.filter(row => Object.values(row).some(v => v)),
+                data: cleanData,
                 config: { ...config, searchCol }
             };
-            stats[name] = allData[name].data.length;
+            stats[name] = cleanData.length;
+            console.log(`✅ ${name}: ${cleanData.length} rows loaded`);
         } catch (error) {
-            console.error(`Error loading ${name}:`, error);
+            console.error(`❌ Error loading ${name}:`, error);
             stats[name] = 0;
         }
-    });
+    }
     
-    promises.push(
-        loadCSV(KERRY_STATUS_URL)
-            .then(data => { kerryStatusData = data; })
-            .catch(() => { kerryStatusData = []; })
-    );
+    // Load Kerry status
+    try {
+        console.log("Loading Kerry Status...");
+        kerryStatusData = await loadCSV(KERRY_STATUS_URL);
+        console.log(`✅ Kerry Status: ${kerryStatusData.length} rows loaded`);
+    } catch (error) {
+        console.error("❌ Error loading Kerry Status:", error);
+        kerryStatusData = [];
+    }
     
-    await Promise.all(promises);
     showLoading(false);
     updateSidebar();
     showPreview();
+    
+    const total = Object.values(stats).reduce((a, b) => a + b, 0);
+    console.log(`🎉 Total records loaded: ${total}`);
 }
 
 function performSearch() {
@@ -109,13 +133,24 @@ function performSearch() {
         return;
     }
     
+    console.log(`Searching for: ${query}`);
     currentResults = [];
+    
     Object.entries(allData).forEach(([sourceName, sourceData]) => {
         const { data, config } = sourceData;
         const searchCol = config.searchCol;
+        
         data.forEach(row => {
-            const value = String(row[searchCol] || '').toUpperCase();
-            if (value.includes(query)) {
+            // Search in all columns
+            let found = false;
+            for (const [key, value] of Object.entries(row)) {
+                if (String(value || '').toUpperCase().includes(query)) {
+                    found = true;
+                    break;
+                }
+            }
+            
+            if (found) {
                 currentResults.push({
                     ...row,
                     _source: sourceName,
@@ -127,6 +162,8 @@ function performSearch() {
             }
         });
     });
+    
+    console.log(`Found ${currentResults.length} results`);
     displayResults();
 }
 
@@ -238,7 +275,7 @@ function showPreview() {
 function showTab(sourceName, btn) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
-    else document.querySelector('.tab-btn').classList.add('active');
+    else document.querySelector('.tab-btn')?.classList.add('active');
     
     const sourceData = allData[sourceName];
     if (!sourceData || !sourceData.data.length) {
@@ -281,5 +318,6 @@ function downloadResults() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("🚀 TID Search Tool Starting...");
     loadAllData();
 });
