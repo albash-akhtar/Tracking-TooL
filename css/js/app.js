@@ -1,373 +1,425 @@
-const DATA_SOURCES = {
-    "ECL QC Center": {
-        url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSCiZ1MdPMyVAzBqmBmp3Ch8sfefOp_kfPk2RSfMv3bxRD_qccuwaoM7WTVsieKJbA3y3DF41tUxb3T/pub?gid=0&single=true&output=csv",
-        orderCol: "Fleek ID",
-        dateCol: "Fleek Handover Date",
-        partner: "ECL",
-        cssClass: "ecl"
-    },
-    "ECL Zone": {
-        url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSCiZ1MdPMyVAzBqmBmp3Ch8sfefOp_kfPk2RSfMv3bxRD_qccuwaoM7WTVsieKJbA3y3DF41tUxb3T/pub?gid=928309568&single=true&output=csv",
-        orderCol: 0,
-        dateCol: "Fleek Handover Date",
-        partner: "ECL",
-        cssClass: "ecl"
-    },
-    "GE QC Center": {
-        url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjCPd8bUpx59Sit8gMMXjVKhIFA_f-W9Q4mkBSWulOTg4RGahcVXSD4xZiYBAcAH6eO40aEQ9IEEXj/pub?gid=710036753&single=true&output=csv",
-        orderCol: "Order Num",
-        dateCol: "Fleek Handover Date",
-        partner: "GE",
-        cssClass: "ge"
-    },
-    "GE Zone": {
-        url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQjCPd8bUpx59Sit8gMMXjVKhIFA_f-W9Q4mkBSWulOTg4RGahcVXSD4xZiYBAcAH6eO40aEQ9IEEXj/pub?gid=10726393&single=true&output=csv",
-        orderCol: 0,
-        dateCol: "Airport Handover Date",
-        partner: "GE",
-        cssClass: "ge"
-    },
-    "APX": {
-        url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRDEzAMUwnFZ7aoThGoMERtxxsll2kfEaSpa9ksXIx6sqbdMncts6Go2d5mKKabepbNXDSoeaUlk-mP/pub?gid=0&single=true&output=csv",
-        orderCol: "Fleek ID",
-        dateCol: "Fleek Handover Date",
-        partner: "APX",
-        cssClass: "apx"
-    },
-    "Kerry": {
-        url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTZyLyZpVJz9sV5eT4Srwo_KZGnYggpRZkm2ILLYPQKSpTKkWfP9G5759h247O4QEflKCzlQauYsLKI/pub?gid=0&single=true&output=csv",
-        orderCol: "_Order",
-        dateCol: "Fleek Handover Date",
-        partner: "Kerry",
-        cssClass: "kerry"
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: #f1f5f9;
+    min-height: 100vh;
+}
+
+.app-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 280px;
+    background: white;
+    border-right: 1px solid #e2e8f0;
+    padding: 1.5rem;
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.sidebar-header h2 {
+    font-size: 1.25rem;
+    color: #1e293b;
+    margin-bottom: 1rem;
+}
+
+.sidebar-content hr {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 1rem 0;
+}
+
+.total-records {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+}
+
+.total-records .value {
+    color: #3b82f6;
+}
+
+.source-list .source-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.source-item .name {
+    font-weight: 600;
+}
+
+.source-item.ecl .name { color: #f59e0b; }
+.source-item.ge .name { color: #3b82f6; }
+.source-item.apx .name { color: #8b5cf6; }
+.source-item.kerry .name { color: #10b981; }
+
+.refresh-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.refresh-btn:hover {
+    background: #2563eb;
+}
+
+.last-updated {
+    font-size: 0.75rem;
+    color: #64748b;
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+.main-content {
+    flex: 1;
+    margin-left: 280px;
+    padding: 2rem;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.main-header {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #1e3a8a;
+    margin-bottom: 0.5rem;
+}
+
+.sub-header {
+    font-size: 1rem;
+    color: #64748b;
+}
+
+.search-section {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.search-section h3 {
+    margin-bottom: 1rem;
+    color: #1e293b;
+}
+
+.search-box {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.search-box input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+.search-btn {
+    padding: 0.75rem 2rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.search-btn:hover {
+    background: #2563eb;
+}
+
+.loading {
+    text-align: center;
+    padding: 3rem;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.results-section {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.results-summary {
+    padding: 1rem;
+    background: #dcfce7;
+    border-radius: 8px;
+    color: #166534;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.stat-card {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #1e3a8a;
+}
+
+.stat-value.ecl { color: #f59e0b; }
+.stat-value.ge { color: #3b82f6; }
+.stat-value.other { color: #8b5cf6; }
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.result-card {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid #3b82f6;
+}
+
+.result-card.ecl { border-left-color: #f59e0b; }
+.result-card.ge { border-left-color: #3b82f6; }
+.result-card.apx { border-left-color: #8b5cf6; }
+.result-card.kerry { border-left-color: #10b981; }
+
+.source-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.source-badge.ecl { background: #f59e0b; }
+.source-badge.ge { background: #3b82f6; }
+.source-badge.apx { background: #8b5cf6; }
+.source-badge.kerry { background: #10b981; }
+
+.result-card h4 {
+    margin: 0.5rem 0;
+    color: #1e293b;
+}
+
+.result-card p {
+    margin: 0;
+    color: #64748b;
+}
+
+.result-card .status {
+    margin-top: 0.5rem;
+    color: #059669;
+    font-weight: 600;
+}
+
+.details-toggle {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background: #e2e8f0;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.details-toggle:hover {
+    background: #cbd5e1;
+}
+
+.details-content {
+    display: none;
+    margin-top: 1rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    overflow-x: auto;
+}
+
+.details-content.show {
+    display: block;
+}
+
+.details-content pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.download-btn {
+    width: 100%;
+    padding: 1rem;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s;
+}
+
+.download-btn:hover {
+    background: #059669;
+}
+
+.no-results {
+    text-align: center;
+    padding: 2rem;
+    background: #fef3c7;
+    border-radius: 12px;
+    color: #92400e;
+    font-weight: 600;
+}
+
+.preview-section {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.preview-section h3 {
+    margin-bottom: 1rem;
+}
+
+.tabs {
+    margin-top: 1rem;
+}
+
+.tab-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.tab-btn {
+    padding: 0.5rem 1rem;
+    border: 2px solid #e2e8f0;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.tab-btn:hover {
+    border-color: #3b82f6;
+}
+
+.tab-btn.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+.tab-content {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.data-table th,
+.data-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.data-table th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.data-table tr:hover {
+    background: #f8fafc;
+}
+
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 100%;
+        position: relative;
+        height: auto;
     }
-};
-
-const KERRY_STATUS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTZyLyZpVJz9sV5eT4Srwo_KZGnYggpRZkm2ILLYPQKSpTKkWfP9G5759h247O4QEflKCzlQauYsLKI/pub?gid=2121564686&single=true&output=csv";
-
-let allData = {};
-let kerryStatusData = [];
-let currentResults = [];
-let stats = {};
-
-async function fetchCSV(url) {
-    const proxyUrls = [
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-        `https://corsproxy.io/?${encodeURIComponent(url)}`,
-        url
-    ];
-    
-    for (const proxyUrl of proxyUrls) {
-        try {
-            const response = await fetch(proxyUrl);
-            if (response.ok) {
-                const text = await response.text();
-                if (text && text.length > 0) {
-                    return text;
-                }
-            }
-        } catch (e) {
-            console.log(`Proxy failed: ${proxyUrl.substring(0, 50)}...`);
-        }
+    .main-content {
+        margin-left: 0;
     }
-    throw new Error("All proxies failed");
-}
-
-function parseCSV(csvText) {
-    const lines = csvText.split('\n');
-    if (lines.length < 2) return [];
-    
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-    const data = [];
-    
-    for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        
-        const values = [];
-        let current = '';
-        let inQuotes = false;
-        
-        for (let j = 0; j < line.length; j++) {
-            const char = line[j];
-            if (char === '"') {
-                inQuotes = !inQuotes;
-            } else if (char === ',' && !inQuotes) {
-                values.push(current.trim());
-                current = '';
-            } else {
-                current += char;
-            }
-        }
-        values.push(current.trim());
-        
-        const row = {};
-        headers.forEach((header, index) => {
-            row[header] = values[index] || '';
-        });
-        
-        if (Object.values(row).some(v => v)) {
-            data.push(row);
-        }
+    .app-container {
+        flex-direction: column;
     }
-    
-    return data;
-}
-
-async function loadAllData() {
-    showLoading(true);
-    stats = {};
-    allData = {};
-    
-    console.log("🚀 Starting to load data...");
-    
-    for (const [name, config] of Object.entries(DATA_SOURCES)) {
-        try {
-            console.log(`📥 Loading ${name}...`);
-            const csvText = await fetchCSV(config.url);
-            const data = parseCSV(csvText);
-            
-            let searchCol;
-            if (typeof config.orderCol === 'number') {
-                const headers = Object.keys(data[0] || {});
-                searchCol = headers[config.orderCol] || headers[0];
-            } else {
-                searchCol = config.orderCol;
-                const headers = Object.keys(data[0] || {});
-                const match = headers.find(h => h.toLowerCase() === searchCol.toLowerCase());
-                if (match) searchCol = match;
-            }
-            
-            allData[name] = {
-                data: data,
-                config: { ...config, searchCol }
-            };
-            stats[name] = data.length;
-            console.log(`✅ ${name}: ${data.length} rows`);
-        } catch (error) {
-            console.error(`❌ ${name} failed:`, error.message);
-            stats[name] = 0;
-        }
-    }
-    
-    try {
-        console.log("📥 Loading Kerry Status...");
-        const csvText = await fetchCSV(KERRY_STATUS_URL);
-        kerryStatusData = parseCSV(csvText);
-        console.log(`✅ Kerry Status: ${kerryStatusData.length} rows`);
-    } catch (error) {
-        console.error("❌ Kerry Status failed:", error.message);
-        kerryStatusData = [];
-    }
-    
-    showLoading(false);
-    updateSidebar();
-    showPreview();
-    
-    const total = Object.values(stats).reduce((a, b) => a + b, 0);
-    console.log(`🎉 Total: ${total} records loaded`);
-    
-    if (total === 0) {
-        alert("⚠️ Data load nahi hua. Google Sheets 'Publish to Web' check karo.");
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
-function performSearch() {
-    const query = document.getElementById('searchInput').value.trim().toUpperCase();
-    if (!query) {
-        alert('Please enter a search term');
-        return;
+@media (max-width: 600px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
     }
-    
-    currentResults = [];
-    
-    Object.entries(allData).forEach(([sourceName, sourceData]) => {
-        const { data, config } = sourceData;
-        
-        data.forEach(row => {
-            let found = false;
-            for (const value of Object.values(row)) {
-                if (String(value || '').toUpperCase().includes(query)) {
-                    found = true;
-                    break;
-                }
-            }
-            
-            if (found) {
-                currentResults.push({
-                    ...row,
-                    _source: sourceName,
-                    _partner: config.partner,
-                    _cssClass: config.cssClass,
-                    _searchCol: config.searchCol,
-                    _dateCol: config.dateCol
-                });
-            }
-        });
-    });
-    
-    displayResults();
-}
-
-function handleKeyPress(event) {
-    if (event.key === 'Enter') performSearch();
-}
-
-function getKerryStatus(orderId) {
-    if (!kerryStatusData.length) return null;
-    orderId = String(orderId).toUpperCase().trim();
-    for (const row of kerryStatusData) {
-        for (const [key, value] of Object.entries(row)) {
-            if ((key.toLowerCase().includes('order') || key.toLowerCase().includes('fleek')) &&
-                String(value).toUpperCase().trim() === orderId) {
-                for (const [k, v] of Object.entries(row)) {
-                    if (k.toLowerCase().includes('status')) return v;
-                }
-            }
-        }
+    .search-box {
+        flex-direction: column;
     }
-    return null;
-}
-
-function displayResults() {
-    const resultsSection = document.getElementById('resultsSection');
-    const noResults = document.getElementById('noResults');
-    const previewSection = document.getElementById('previewSection');
-    
-    if (currentResults.length === 0) {
-        resultsSection.style.display = 'none';
-        noResults.style.display = 'block';
-        previewSection.style.display = 'none';
-        return;
-    }
-    
-    noResults.style.display = 'none';
-    previewSection.style.display = 'none';
-    resultsSection.style.display = 'block';
-    
-    document.getElementById('resultsSummary').innerHTML = `✅ Found ${currentResults.length} result(s)`;
-    
-    const eclCount = currentResults.filter(r => r._partner === 'ECL').length;
-    const geCount = currentResults.filter(r => r._partner === 'GE').length;
-    const otherCount = currentResults.length - eclCount - geCount;
-    
-    document.getElementById('statsGrid').innerHTML = `
-        <div class="stat-card"><div class="stat-value">${currentResults.length}</div><div class="stat-label">Total Results</div></div>
-        <div class="stat-card"><div class="stat-value ecl">${eclCount}</div><div class="stat-label">ECL</div></div>
-        <div class="stat-card"><div class="stat-value ge">${geCount}</div><div class="stat-label">GE</div></div>
-        <div class="stat-card"><div class="stat-value other">${otherCount}</div><div class="stat-label">APX/Kerry</div></div>
-    `;
-    
-    const resultsList = document.getElementById('resultsList');
-    resultsList.innerHTML = currentResults.slice(0, 50).map((row, index) => {
-        const orderId = row[row._searchCol] || 'N/A';
-        const handoverDate = row[row._dateCol] || 'N/A';
-        const kerryStatus = row._partner === 'Kerry' ? getKerryStatus(orderId) : null;
-        const displayData = {};
-        Object.entries(row).forEach(([key, value]) => {
-            if (!key.startsWith('_')) displayData[key] = value;
-        });
-        return `
-            <div class="result-card ${row._cssClass}">
-                <span class="source-badge ${row._cssClass}">${row._source}</span>
-                <h4>Order: ${orderId}</h4>
-                <p>📅 Handover Date: ${handoverDate}</p>
-                ${kerryStatus ? `<p class="status">📦 Status: ${kerryStatus}</p>` : ''}
-                <button class="details-toggle" onclick="toggleDetails(${index})">📋 View All Details</button>
-                <div class="details-content" id="details-${index}"><pre>${JSON.stringify(displayData, null, 2)}</pre></div>
-            </div>
-        `;
-    }).join('');
-    
-    if (currentResults.length > 50) {
-        resultsList.innerHTML += `<p style="text-align:center;color:#64748b;">Showing 50 of ${currentResults.length} results</p>`;
+    .main-header {
+        font-size: 1.75rem;
     }
 }
-
-function toggleDetails(index) {
-    document.getElementById(`details-${index}`).classList.toggle('show');
-}
-
-function updateSidebar() {
-    const totalRecords = Object.values(stats).reduce((a, b) => a + b, 0);
-    document.getElementById('totalRecords').textContent = totalRecords.toLocaleString();
-    document.getElementById('sourceList').innerHTML = Object.entries(DATA_SOURCES).map(([name, config]) => `
-        <div class="source-item ${config.cssClass}">
-            <span class="name">● ${name}</span>
-            <span>${(stats[name] || 0).toLocaleString()}</span>
-        </div>
-    `).join('');
-    document.getElementById('lastUpdated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
-}
-
-function showLoading(show) {
-    document.getElementById('loading').style.display = show ? 'block' : 'none';
-    if (show) {
-        document.getElementById('resultsSection').style.display = 'none';
-        document.getElementById('noResults').style.display = 'none';
-        document.getElementById('previewSection').style.display = 'none';
-    }
-}
-
-function showPreview() {
-    document.getElementById('previewSection').style.display = 'block';
-    const sourceNames = Object.keys(DATA_SOURCES);
-    document.getElementById('tabButtons').innerHTML = sourceNames.map((name, index) => `
-        <button class="tab-btn ${index === 0 ? 'active' : ''}" onclick="showTab('${name}', this)">${name}</button>
-    `).join('');
-    showTab(sourceNames[0]);
-}
-
-function showTab(sourceName, btn) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    else document.querySelector('.tab-btn')?.classList.add('active');
-    
-    const sourceData = allData[sourceName];
-    if (!sourceData || !sourceData.data.length) {
-        document.getElementById('tabContent').innerHTML = `<p>No data available for ${sourceName}</p>`;
-        return;
-    }
-    
-    const data = sourceData.data.slice(0, 5);
-    const headers = Object.keys(data[0]).filter(h => !h.startsWith('_'));
-    document.getElementById('tabContent').innerHTML = `
-        <table class="data-table">
-            <thead><tr>${headers.slice(0, 8).map(h => `<th>${h}</th>`).join('')}</tr></thead>
-            <tbody>${data.map(row => `<tr>${headers.slice(0, 8).map(h => `<td>${row[h] || ''}</td>`).join('')}</tr>`).join('')}</tbody>
-        </table>
-    `;
-}
-
-function refreshData() {
-    loadAllData();
-}
-
-function downloadResults() {
-    if (!currentResults.length) return;
-    const headers = Object.keys(currentResults[0]).filter(k => !k.startsWith('_'));
-    headers.push('Source');
-    
-    let csv = headers.join(',') + '\n';
-    currentResults.forEach(row => {
-        const values = headers.map(h => {
-            if (h === 'Source') return row._source;
-            const val = String(row[h] || '').replace(/"/g, '""');
-            return val.includes(',') ? `"${val}"` : val;
-        });
-        csv += values.join(',') + '\n';
-    });
-    
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `search_results_${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("🚀 TID Search Tool v2.0");
-    loadAllData();
-});
