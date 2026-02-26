@@ -1,9 +1,3 @@
-const CORS_PROXIES = [
-    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-    url => url
-];
-
 const DATA_SOURCES = [
     { name: 'ECL QC Center', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSCiZ1MdPMyVAzBqmBmp3Ch8sfefOp_kfPk2RSfMv3bxRD_qccuwaoM7WTVsieKJbA3y3DF41tUxb3T/pub?gid=0&single=true&output=csv', orderCol: 'Fleek ID', dateCol: 'Fleek Handover Date' },
     { name: 'ECL Zone', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSCiZ1MdPMyVAzBqmBmp3Ch8sfefOp_kfPk2RSfMv3bxRD_qccuwaoM7WTVsieKJbA3y3DF41tUxb3T/pub?gid=1008763065&single=true&output=csv', orderCol: 0, dateCol: 'Fleek Handover Date' },
@@ -13,10 +7,7 @@ const DATA_SOURCES = [
     { name: 'Kerry', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSoO0JD89xK3Jutz4x8LoXQrQm7swjSgiWvGJRW4wiqxHoF1sGvlTbzJH-eMwrCqEREYH4D8DoqkOFw/pub?gid=0&single=true&output=csv', orderCol: '_Order', dateCol: 'Fleek Handover Date' }
 ];
 
-const KERRY_STATUS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSoO0JD89xK3Jutz4x8LoXQrQm7swjSgiWvGJRW4wiqxHoF1sGvlTbzJH-eMwrCqEREYH4D8DoqkOFw/pub?gid=952498704&single=true&output=csv';
-
 let allData = [];
-let kerryStatusData = [];
 let loadedSources = 0;
 
 function parseCSV(text) {
@@ -39,38 +30,49 @@ function parseCSV(text) {
     return { headers, rows };
 }
 
-async function fetchWithProxy(url, proxyIndex = 0) {
-    if (proxyIndex >= CORS_PROXIES.length) throw new Error('All proxies failed');
-    try {
-        const response = await fetch(CORS_PROXIES[proxyIndex](url));
-        if (!response.ok) throw new Error('Fetch failed');
-        return await response.text();
-    } catch (e) { return fetchWithProxy(url, proxyIndex + 1); }
+async function fetchData(url) {
+    const corsProxies = [
+        `https://corsproxy.io/?${encodeURIComponent(url)}`,
+        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+        url
+    ];
+    
+    for (const proxyUrl of corsProxies) {
+        try {
+            const response = await fetch(proxyUrl);
+            if (response.ok) {
+                const text = await response.text();
+                if (text && text.length > 0 && !text.includes('<!DOCTYPE')) {
+                    return text;
+                }
+            }
+        } catch (e) {
+            console.log('Proxy failed, trying next...');
+        }
+    }
+    throw new Error('All proxies failed');
 }
 
 async function loadDataSource(source) {
     try {
-        const text = await fetchWithProxy(source.url);
+        const text = await fetchData(source.url);
         const { headers, rows } = parseCSV(text);
         const orderColIndex = typeof source.orderCol === 'number' ? source.orderCol : headers.findIndex(h => h.toLowerCase().includes(source.orderCol.toLowerCase()));
-        const dateColIndex = headers.findIndex(h => h.toLowerCase().includes(source.dateCol.toLowerCase()));
-        rows.forEach(row => { allData.push({ source: source.name, orderId: row[orderColIndex] || '', date: row[dateColIndex] || '', headers, row }); });
-    } catch (e) { console.error(`Failed to load ${source.name}:`, e); }
+        rows.forEach(row => { 
+            allData.push({ source: source.name, headers, row }); 
+        });
+        console.log(`Loaded ${rows.length} rows from ${source.name}`);
+    } catch (e) { 
+        console.error(`Failed to load ${source.name}:`, e); 
+    }
     loadedSources++;
     updateLoadingStatus();
-}
-
-async function loadKerryStatus() {
-    try {
-        const text = await fetchWithProxy(KERRY_STATUS_URL);
-        const { headers, rows } = parseCSV(text);
-        kerryStatusData = { headers, rows };
-    } catch (e) { console.error('Failed to load Kerry status:', e); }
 }
 
 function updateLoadingStatus() {
     const loadingEl = document.getElementById('loading');
     const contentEl = document.getElementById('content');
+    
     if (loadedSources >= DATA_SOURCES.length) {
         loadingEl.style.display = 'none';
         contentEl.style.display = 'block';
@@ -86,34 +88,19 @@ function search(query) {
     return allData.filter(item => item.row.some(cell => cell && cell.toString().toLowerCase().includes(q)));
 }
 
-function getKerryStatus(orderId) {
-    if (!kerryStatusData.rows) return null;
-    const orderColIndex = kerryStatusData.headers.findIndex(h => h.toLowerCase().includes('order') || h.toLowerCase().includes('id'));
-    for (const row of kerryStatusData.rows) {
-        if (row[orderColIndex] && row[orderColIndex].toLowerCase().includes(orderId.toLowerCase())) {
-            return { headers: kerryStatusData.headers, row };
-        }
-    }
-    return null;
-}
-
 function displayResults(results) {
     const resultsEl = document.getElementById('results');
-    if (results.length === 0) { resultsEl.innerHTML = '<div class="no-results">No results found</div>'; return; }
+    if (results.length === 0) { 
+        resultsEl.innerHTML = '<div class="no-results">No results found</div>'; 
+        return; 
+    }
     let html = `<div class="results-count">${results.length} result(s) found</div>`;
     results.forEach(item => {
         html += `<div class="result-card"><div class="result-header">${item.source}</div><div class="result-body"><table class="result-table">`;
-        item.headers.forEach((header, i) => { if (item.row[i]) html += `<tr><td class="label">${header}</td><td>${item.row[i]}</td></tr>`; });
-        html += `</table>`;
-        if (item.source === 'Kerry') {
-            const status = getKerryStatus(item.orderId);
-            if (status) {
-                html += `<div class="kerry-status"><strong>Kerry Status:</strong><table class="result-table">`;
-                status.headers.forEach((header, i) => { if (status.row[i]) html += `<tr><td class="label">${header}</td><td>${status.row[i]}</td></tr>`; });
-                html += `</table></div>`;
-            }
-        }
-        html += `</div></div>`;
+        item.headers.forEach((header, i) => { 
+            if (item.row[i]) html += `<tr><td class="label">${header}</td><td>${item.row[i]}</td></tr>`; 
+        });
+        html += `</table></div></div>`;
     });
     resultsEl.innerHTML = html;
 }
@@ -121,7 +108,11 @@ function displayResults(results) {
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.getElementById('searchBtn');
-    Promise.all([...DATA_SOURCES.map(source => loadDataSource(source)), loadKerryStatus()]);
+    
+    DATA_SOURCES.forEach(source => loadDataSource(source));
+    
     searchBtn.addEventListener('click', () => displayResults(search(searchInput.value)));
-    searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') displayResults(search(searchInput.value)); });
+    searchInput.addEventListener('keypress', (e) => { 
+        if (e.key === 'Enter') displayResults(search(searchInput.value)); 
+    });
 });
