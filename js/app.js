@@ -1,10 +1,12 @@
 const DATA_SOURCES = [
-    { name: 'ECL QC Center', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSCiZ1MdPMyVAzBqmBmp3Ch8sfefOp_kfPk2RSfMv3bxRD_qccuwaoM7WTVsieKJbA3y3DF41tUxb3T/pub?gid=0&single=true&output=csv', orderCol: 'Fleek ID', dateCol: 'Fleek Handover Date' },
-    { name: 'ECL Zone', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSCiZ1MdPMyVAzBqmBmp3Ch8sfefOp_kfPk2RSfMv3bxRD_qccuwaoM7WTVsieKJbA3y3DF41tUxb3T/pub?gid=1008763065&single=true&output=csv', orderCol: 0, dateCol: 'Fleek Handover Date' },
-    { name: 'GE QC Center', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTKPxWYipPjjpjNBY7X5VLqgKOyLdNMZHloy3EmsSA2Ho1y57gfPNbwz65aM7ieJaVSAQwfAv_p9d0P/pub?gid=0&single=true&output=csv', orderCol: 'Order Num', dateCol: 'Fleek Handover Date' },
-    { name: 'GE Zone', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTKPxWYipPjjpjNBY7X5VLqgKOyLdNMZHloy3EmsSA2Ho1y57gfPNbwz65aM7ieJaVSAQwfAv_p9d0P/pub?gid=1008763065&single=true&output=csv', orderCol: 0, dateCol: 'Airport Handover Date' },
-    { name: 'APX', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSbbwHfhPGMAH4Ly7nldKfGdDU2MzYKz2v2kfuueR1q10LJMSbPz7vgOBU2hWXk0rXNwLJk7pvLu_S4/pub?gid=0&single=true&output=csv', orderCol: 'Fleek ID', dateCol: 'Fleek Handover Date' },
-    { name: 'Kerry', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSoO0JD89xK3Jutz4x8LoXQrQm7swjSgiWvGJRW4wiqxHoF1sGvlTbzJH-eMwrCqEREYH4D8DoqkOFw/pub?gid=0&single=true&output=csv', orderCol: '_Order', dateCol: 'Fleek Handover Date' }
+    { name: 'ECL QC Center', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSCiZ1MdPMyVAzBqmBmp3Ch8sfefOp_kfPk2RSfMv3bxRD_qccuwaoM7WTVsieKJbA3y3DF41tUxb3T/pub?gid=0&single=true&output=csv' },
+    { name: 'ECL Zone', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSCiZ1MdPMyVAzBqmBmp3Ch8sfefOp_kfPk2RSfMv3bxRD_qccuwaoM7WTVsieKJbA3y3DF41tUxb3T/pub?gid=928309568&single=true&output=csv' },
+    { name: 'GE QC Center', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjCPd8bUpx59Sit8gMMXjVKhIFA_f-W9Q4mkBSWuIOTg4RGahcVXSD4xZiYBAcAH6eO40aEQ9IEEXj/pub?gid=710036753&single=true&output=csv' },
+    { name: 'GE Zone', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjCPd8bUpx59Sit8gMMXjVKhIFA_f-W9Q4mkBSWuIOTg4RGahcVXSD4xZiYBAcAH6eO40aEQ9IEEXj/pub?gid=10726393&single=true&output=csv' },
+    { name: 'APX', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDEzAMUwnFZ7aoThGoMERtxxsIl2kfEaSpa9ksXlx6sqbdMncts6Go2d5mKKabepbNXDSoeaUlk-mP/pub?gid=0&single=true&output=csv' },
+    { name: 'Kerry', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZyLyZpVJz9sV5eT4Srwo_KZGnYggpRZkm2ILLYPQKSpTKkWfP9G5759h247O4QEflKCzlQauYsLKl/pub?gid=0&single=true&output=csv' },
+    { name: 'Sea Shipped QC', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPWppcYunq-MuluZ2pOzptlKP-6oaHMQBS26f9IfpnSyJhll4O_twlxp8EnA-jMbk4meLpMqWajfAX/pub?gid=1044610764&single=true&output=csv' },
+    { name: 'Sea Shipped Zone', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPWppcYunq-MuluZ2pOzptlKP-6oaHMQBS26f9IfpnSyJhll4O_twlxp8EnA-jMbk4meLpMqWajfAX/pub?gid=0&single=true&output=csv' }
 ];
 
 let allData = [];
@@ -57,7 +59,6 @@ async function loadDataSource(source) {
     try {
         const text = await fetchData(source.url);
         const { headers, rows } = parseCSV(text);
-        const orderColIndex = typeof source.orderCol === 'number' ? source.orderCol : headers.findIndex(h => h.toLowerCase().includes(source.orderCol.toLowerCase()));
         rows.forEach(row => { 
             allData.push({ source: source.name, headers, row }); 
         });
