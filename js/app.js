@@ -1,8 +1,11 @@
 const DATA_SOURCES = [
     { name: 'ECL QC Center', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSCiZ1MdPMyVAzBqmBmp3Ch8sfefOp_kfPk2RSfMv3bxRD_qccuwaoM7WTVsieKJbA3y3DF41tUxb3T/pub?gid=0&single=true&output=csv' },
     { name: 'ECL Zone', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSCiZ1MdPMyVAzBqmBmp3Ch8sfefOp_kfPk2RSfMv3bxRD_qccuwaoM7WTVsieKJbA3y3DF41tUxb3T/pub?gid=928309568&single=true&output=csv' },
+    { name: 'ECL Old QC', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS84VLYyM4GsV0SQ_GPo0CuaRg7z2JjMCeS9NKMaErXeh9AZ5RtS9QLCdWxGpMP4JUk6QUcC-jIJel7/pub?gid=0&single=true&output=csv' },
+    { name: 'ECL Old Zone', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS84VLYyM4GsV0SQ_GPo0CuaRg7z2JjMCeS9NKMaErXeh9AZ5RtS9QLCdWxGpMP4JUk6QUcC-jIJel7/pub?gid=928309568&single=true&output=csv' },
     { name: 'GE QC Center', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjCPd8bUpx59Sit8gMMXjVKhIFA_f-W9Q4mkBSWulOTg4RGahcVXSD4xZiYBAcAH6eO40aEQ9IEEXj/pub?gid=710036753&single=true&output=csv' },
     { name: 'GE Zone', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjCPd8bUpx59Sit8gMMXjVKhIFA_f-W9Q4mkBSWulOTg4RGahcVXSD4xZiYBAcAH6eO40aEQ9IEEXj/pub?gid=10726393&single=true&output=csv' },
+    { name: 'APX', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRDEzAMUwnFZ7aoThGoMERtxxsll2kfEaSpa9ksXIx6sqbdMncts6Go2d5mKKabepbNXDSoeaUlk-mP/pub?gid=0&single=true&output=csv' },
     { name: 'Kerry', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZyLyZpVJz9sV5eT4Srwo_KZGnYggpRZkm2ILLYPQKSpTKkWfP9G5759h247O4QEflKCzlQauYsLKI/pub?gid=0&single=true&output=csv' },
     { name: 'Sea Shipped QC', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPWppcYunq-MuluZ2pOzptlKP-6oaHMQBS26f9lfpnSyJhIl4O_twlxp8EnA-jMbk4meLpMqWajfAX/pub?gid=1044610764&single=true&output=csv' },
     { name: 'Sea Shipped Zone', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPWppcYunq-MuluZ2pOzptlKP-6oaHMQBS26f9lfpnSyJhIl4O_twlxp8EnA-jMbk4meLpMqWajfAX/pub?gid=0&single=true&output=csv' }
@@ -70,11 +73,11 @@ async function loadKerryStatus() {
 function getLatestStatus(orderId) {
     if (!kerryStatusData.rows || kerryStatusData.rows.length === 0) return null;
     
-    const orderIdClean = orderId.toString().toLowerCase().replace(/[^a-z0-9]/g, '');
+    const orderIdClean = orderId.toString().toLowerCase().replace(/[^a-z0-9_]/g, '');
     
     for (const row of kerryStatusData.rows) {
-        const rowOrderId = (row[0] || '').toString().toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (rowOrderId && orderIdClean && (rowOrderId.includes(orderIdClean) || orderIdClean.includes(rowOrderId))) {
+        const rowOrderId = (row[0] || '').toString().toLowerCase().replace(/[^a-z0-9_]/g, '');
+        if (rowOrderId && orderIdClean && (rowOrderId === orderIdClean || rowOrderId.includes(orderIdClean) || orderIdClean.includes(rowOrderId))) {
             return {
                 orderId: row[0] || '',
                 status: row[1] || '',
