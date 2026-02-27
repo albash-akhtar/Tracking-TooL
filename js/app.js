@@ -11,6 +11,28 @@ const DATA_SOURCES = [
     { name: 'Sea Shipped Zone', url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPWppcYunq-MuluZ2pOzptlKP-6oaHMQBS26f9lfpnSyJhIl4O_twlxp8EnA-jMbk4meLpMqWajfAX/pub?gid=0&single=true&output=csv' }
 ];
 
+// Columns jo dikhane hain (sab sheets mein)
+const ALLOWED_COLUMNS = [
+    'fleek id',
+    'fleek handover date',
+    'no. of boxes',
+    'n.o of boxes',
+    'chargeable weight',
+    'vendor name',
+    'item count',
+    'customer name',
+    'tracking id',
+    'mawb',
+    'mawb/flight',
+    'flight',
+    'order num',
+    'order number',
+    '3pl',
+    'qc status',
+    'ecl entry date',
+    'airport handover date'
+];
+
 let allData = [];
 let loadedSources = 0;
 
@@ -91,6 +113,12 @@ function search(query) {
     return allData.filter(item => item.row.some(cell => cell && cell.toString().toLowerCase().includes(q)));
 }
 
+function shouldShowColumn(header) {
+    if (!header) return false;
+    const h = header.toLowerCase().trim();
+    return ALLOWED_COLUMNS.some(allowed => h.includes(allowed) || allowed.includes(h));
+}
+
 function displayResults(results) {
     const resultsEl = document.getElementById('results');
     if (results.length === 0) { 
@@ -101,7 +129,9 @@ function displayResults(results) {
     results.forEach(item => {
         html += `<div class="result-card"><div class="result-header">${item.source}</div><div class="result-body"><table class="result-table">`;
         item.headers.forEach((header, i) => { 
-            if (item.row[i]) html += `<tr><td class="label">${header}</td><td>${item.row[i]}</td></tr>`; 
+            if (item.row[i] && header && shouldShowColumn(header)) {
+                html += `<tr><td class="label">${header}</td><td>${item.row[i]}</td></tr>`; 
+            }
         });
         html += `</table></div></div>`;
     });
